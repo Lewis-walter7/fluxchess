@@ -1,0 +1,32 @@
+import type { MatchmakingJoinPayload, MatchmakingQueuedAck } from '@chess/contracts';
+import type { Socket } from 'socket.io';
+import { PrismaService } from '../prisma/prisma.service';
+import { RedisService } from '../redis/redis.service';
+import { MatchmakingGateway } from './matchmaking.gateway';
+type TypedSocket = Socket;
+export declare class MatchmakingService {
+    private readonly prisma;
+    private readonly redis;
+    private readonly gateway;
+    private readonly logger;
+    private readonly queues;
+    private readonly timers;
+    constructor(prisma: PrismaService, redis: RedisService, gateway: MatchmakingGateway);
+    joinQueue(socket: TypedSocket, payload: MatchmakingJoinPayload): Promise<MatchmakingQueuedAck>;
+    leaveQueue(socketId: string, queueId: string): Promise<void>;
+    removeBySocket(socketId: string): Promise<void>;
+    private addToMemoryQueue;
+    private removeFromMemoryQueue;
+    private persistEntry;
+    private scheduleExpansion;
+    private clearTimer;
+    private findEntry;
+    private computeWindow;
+    private updateWindowInRedis;
+    private handleExpansionTick;
+    private tryMatch;
+    private finalizeMatch;
+    private toRatingSnapshot;
+    private mapTimeControl;
+}
+export {};

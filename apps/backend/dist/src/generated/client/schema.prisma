@@ -1,0 +1,90 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/client"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum TimeControl {
+  BULLET
+  BLITZ
+  RAPID
+  CLASSICAL
+}
+
+model User {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Authentication fields
+  email            String    @unique
+  username         String    @unique
+  passwordHash     String
+  isEmailVerified  Boolean   @default(false)
+  refreshTokenHash String?
+  lastLoginAt      DateTime?
+
+  // Profile fields (all optional)
+  biography String?
+  flair     String? // Emoji flair
+  country   String? // Country code (e.g., "US", "GB")
+  location  String? // City, State
+  realName  String?
+
+  // Chess ratings from various federations
+  fideRating Int?
+  uscfRating Int?
+  ecfRating  Int?
+  rcfRating  Int?
+  cfcRating  Int?
+  dsbRating  Int?
+
+  socialLinks String? // Social media links (stored as text, one per line)
+
+  ratings      Rating[]
+  gamesAsWhite Game[]   @relation("WhiteGames")
+  gamesAsBlack Game[]   @relation("BlackGames")
+
+  @@index([email])
+  @@index([username])
+}
+
+model Rating {
+  id          String      @id @default(uuid())
+  userId      String
+  timeControl TimeControl
+  rating      Int
+  deviation   Float
+  volatility  Float
+  updatedAt   DateTime    @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, timeControl])
+}
+
+model Game {
+  id          String      @id @default(uuid())
+  createdAt   DateTime    @default(now())
+  timeControl TimeControl
+
+  whiteUserId String?
+  blackUserId String?
+
+  whiteRating Int
+  blackRating Int
+
+  whiteDeviation Float
+  blackDeviation Float
+
+  whiteVolatility Float
+  blackVolatility Float
+
+  initialFen String
+
+  whiteUser User? @relation("WhiteGames", fields: [whiteUserId], references: [id])
+  blackUser User? @relation("BlackGames", fields: [blackUserId], references: [id])
+}
