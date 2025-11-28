@@ -20,7 +20,7 @@ export const socketClient = (): TypedSocket => {
     const token = useAuthStore.getState().accessToken;
 
     socketRef = io(`${WS_URL}/core`, {
-      transports: ["websocket"],
+      transports: ["websocket", "polling"],
       withCredentials: true,
       reconnection: true,
       reconnectionAttempts: 5,
