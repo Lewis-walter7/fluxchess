@@ -21,9 +21,16 @@ let RedisService = class RedisService {
     }
     onModuleInit() {
         const url = this.configService.get('REDIS_URL') ?? 'redis://localhost:6379';
+        const isUpstash = url.includes('upstash.io');
         this.client = new ioredis_1.default(url, {
             lazyConnect: true,
             maxRetriesPerRequest: 3,
+            ...(isUpstash && {
+                tls: {
+                    rejectUnauthorized: true,
+                },
+                family: 6,
+            }),
         });
     }
     async getClient() {
