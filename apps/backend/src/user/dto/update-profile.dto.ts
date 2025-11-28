@@ -1,5 +1,5 @@
 import { IsOptional, IsString, IsInt, IsEnum } from 'class-validator';
-import { TimeControl } from '@prisma/client';
+import { TimeControl } from '../../generated/client';
 
 export class UpdateProfileDto {
     @IsOptional()

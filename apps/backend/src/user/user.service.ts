@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
-import { TimeControl } from '@prisma/client';
+import { TimeControl } from '../generated/client';
 
 @Injectable()
 export class UserService {

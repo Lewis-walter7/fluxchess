@@ -5,19 +5,19 @@ export declare class UserService {
     constructor(prisma: PrismaService);
     updateProfile(userId: string, updateData: UpdateProfileDto): Promise<({
         ratings: {
+            id: string;
+            updatedAt: Date;
             rating: number;
             userId: string;
+            timeControl: import("../generated/client").$Enums.TimeControl;
             deviation: number;
             volatility: number;
-            id: string;
-            timeControl: import("src/generated/client").$Enums.TimeControl;
-            updatedAt: Date;
         }[];
     } & {
         id: string;
-        createdAt: Date;
         email: string;
         username: string;
+        createdAt: Date;
         updatedAt: Date;
         passwordHash: string;
         isEmailVerified: boolean;
@@ -38,19 +38,19 @@ export declare class UserService {
     }) | null>;
     getProfile(userId: string): Promise<({
         ratings: {
+            id: string;
+            updatedAt: Date;
             rating: number;
             userId: string;
+            timeControl: import("../generated/client").$Enums.TimeControl;
             deviation: number;
             volatility: number;
-            id: string;
-            timeControl: import("src/generated/client").$Enums.TimeControl;
-            updatedAt: Date;
         }[];
     } & {
         id: string;
-        createdAt: Date;
         email: string;
         username: string;
+        createdAt: Date;
         updatedAt: Date;
         passwordHash: string;
         isEmailVerified: boolean;

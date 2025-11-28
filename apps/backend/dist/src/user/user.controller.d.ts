@@ -1,24 +1,24 @@
 import { UserService } from './user.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
-import { User } from '@prisma/client';
+import { User } from '../generated/client';
 export declare class UserController {
     private readonly userService;
     constructor(userService: UserService);
     getProfile(user: User): Promise<({
         ratings: {
+            id: string;
+            updatedAt: Date;
             rating: number;
             userId: string;
+            timeControl: import("../generated/client").$Enums.TimeControl;
             deviation: number;
             volatility: number;
-            id: string;
-            timeControl: import("src/generated/client").$Enums.TimeControl;
-            updatedAt: Date;
         }[];
     } & {
         id: string;
-        createdAt: Date;
         email: string;
         username: string;
+        createdAt: Date;
         updatedAt: Date;
         passwordHash: string;
         isEmailVerified: boolean;
@@ -39,19 +39,19 @@ export declare class UserController {
     }) | null>;
     updateProfile(user: User, updateProfileDto: UpdateProfileDto): Promise<({
         ratings: {
+            id: string;
+            updatedAt: Date;
             rating: number;
             userId: string;
+            timeControl: import("../generated/client").$Enums.TimeControl;
             deviation: number;
             volatility: number;
-            id: string;
-            timeControl: import("src/generated/client").$Enums.TimeControl;
-            updatedAt: Date;
         }[];
     } & {
         id: string;
-        createdAt: Date;
         email: string;
         username: string;
+        createdAt: Date;
         updatedAt: Date;
         passwordHash: string;
         isEmailVerified: boolean;
