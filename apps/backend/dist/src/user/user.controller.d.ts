@@ -6,19 +6,19 @@ export declare class UserController {
     constructor(userService: UserService);
     getProfile(user: User): Promise<({
         ratings: {
-            id: string;
-            updatedAt: Date;
             rating: number;
             userId: string;
-            timeControl: import("../generated/client").$Enums.TimeControl;
             deviation: number;
             volatility: number;
+            id: string;
+            timeControl: import("../generated/client").$Enums.TimeControl;
+            updatedAt: Date;
         }[];
     } & {
         id: string;
+        createdAt: Date;
         email: string;
         username: string;
-        createdAt: Date;
         updatedAt: Date;
         passwordHash: string;
         isEmailVerified: boolean;
@@ -39,19 +39,19 @@ export declare class UserController {
     }) | null>;
     updateProfile(user: User, updateProfileDto: UpdateProfileDto): Promise<({
         ratings: {
-            id: string;
-            updatedAt: Date;
             rating: number;
             userId: string;
-            timeControl: import("../generated/client").$Enums.TimeControl;
             deviation: number;
             volatility: number;
+            id: string;
+            timeControl: import("../generated/client").$Enums.TimeControl;
+            updatedAt: Date;
         }[];
     } & {
         id: string;
+        createdAt: Date;
         email: string;
         username: string;
-        createdAt: Date;
         updatedAt: Date;
         passwordHash: string;
         isEmailVerified: boolean;
