@@ -11,6 +11,9 @@ importers:
       axios:
         specifier: ^1.13.2
         version: 1.13.2
+      socket.io-client:
+        specifier: ^4.8.1
+        version: 4.8.1
 
   apps/backend:
     dependencies:

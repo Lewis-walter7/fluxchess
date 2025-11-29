@@ -98,10 +98,19 @@ export const useGameStore = create<GameStoreState>((set, get) => ({
     });
   },
   setMatched(payload) {
-    if (payload.queueId !== get().queueId) {
+    const currentQueueId = get().queueId;
+    console.log('[setMatched] Received payload:', {
+      payloadQueueId: payload.queueId,
+      currentQueueId,
+      match: currentQueueId === payload.queueId
+    });
+
+    if (payload.queueId !== currentQueueId) {
+      console.warn('[setMatched] Queue ID mismatch! Ignoring match.');
       return;
     }
 
+    console.log('[setMatched] Queue IDs match! Setting matched status.');
     set({
       status: "matched",
       match: payload,

@@ -1,0 +1,7 @@
+-- CreateEnum
+CREATE TYPE "GameStatus" AS ENUM ('WAITING_FOR_START', 'IN_PROGRESS', 'COMPLETED', 'ABORTED');
+
+-- AlterTable
+ALTER TABLE "Game" ADD COLUMN     "abortedAt" TIMESTAMP(3),
+ADD COLUMN     "startedAt" TIMESTAMP(3),
+ADD COLUMN     "status" "GameStatus" NOT NULL DEFAULT 'WAITING_FOR_START';

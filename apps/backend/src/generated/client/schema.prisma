@@ -14,6 +14,13 @@ enum TimeControl {
   CLASSICAL
 }
 
+enum GameStatus {
+  WAITING_FOR_START
+  IN_PROGRESS
+  COMPLETED
+  ABORTED
+}
+
 model User {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now())
@@ -70,6 +77,7 @@ model Game {
   id          String      @id @default(uuid())
   createdAt   DateTime    @default(now())
   timeControl TimeControl
+  status      GameStatus  @default(WAITING_FOR_START)
 
   whiteUserId String?
   blackUserId String?
@@ -84,6 +92,9 @@ model Game {
   blackVolatility Float
 
   initialFen String
+
+  startedAt DateTime? // When first move was made
+  abortedAt DateTime? // When game was aborted
 
   whiteUser User? @relation("WhiteGames", fields: [whiteUserId], references: [id])
   blackUser User? @relation("BlackGames", fields: [blackUserId], references: [id])

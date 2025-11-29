@@ -1,9 +1,11 @@
 "use client";
 
 import type { TimeControl } from "@chess/contracts";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useGameStore } from "@/state/game/store";
 import { useMatchmakingSocket } from "@/state/game/useMatchmakingSocket";
+import { useAuthStore } from "@/state/auth-store";
 
 const DEFAULT_RATING = 1500;
 const PREFERRED_RANGE = 75;
@@ -32,8 +34,10 @@ import { CreateGameModal } from "./create-game-modal";
 
 export const MatchmakingPanel = () => {
   useMatchmakingSocket();
+  const router = useRouter();
 
   const status = useGameStore((state) => state.status);
+  const match = useGameStore((state) => state.match);
   const ratingRange = useGameStore((state) => state.ratingRange);
   const searchElapsedMs = useGameStore((state) => state.searchElapsedMs);
   const queueError = useGameStore((state) => state.queueError);
@@ -42,22 +46,38 @@ export const MatchmakingPanel = () => {
 
   const [submitting, setSubmitting] = useState(false);
   const [isCreateGameModalOpen, setIsCreateGameModalOpen] = useState(false);
-  const userId = useMemo(() => crypto.randomUUID(), []);
+
+  // Get authenticated user ID
+  const user = useAuthStore((state) => state.user);
+
+  // Redirect to game page when match is found
+  useEffect(() => {
+    if (status === "matched" && match?.gameId) {
+      console.log('[Matchmaking] Match found! Redirecting to game:', match.gameId);
+      router.push(`/game/${match.gameId}`);
+    }
+  }, [status, match, router]);
 
   const handleTimeSelect = async (id: string) => {
     if (status === "searching" || submitting) return;
+
+    // Ensure user is authenticated
+    if (!user?.id) {
+      console.error('[Matchmaking] User not authenticated');
+      return;
+    }
 
     setSubmitting(true);
     const selected = timeControls.find((option) => option.id === id);
     const category: TimeControl = selected?.category ?? "blitz";
 
     await joinQueue({
-      userId,
+      userId: user.id,
       timeControl: category,
       rating: DEFAULT_RATING_SNAPSHOT,
       latencyMs: 45,
       preferredRange: PREFERRED_RANGE,
-      deviceFingerprint: userId,
+      deviceFingerprint: user.id,
     });
     setSubmitting(false);
   };
@@ -112,7 +132,7 @@ export const MatchmakingPanel = () => {
 
           <h3 className="mb-2 text-xl font-semibold text-white">Searching for opponent...</h3>
           <p className="mb-6 text-slate-400">
-            {(searchElapsedMs ?? 0) / 1000}s elapsed • Rating window: {ratingRange?.min} - {ratingRange?.max}
+            {(searchElapsedMs ?? 0) / 1000}s elapsed
           </p>
 
           <button

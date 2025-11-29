@@ -10,15 +10,18 @@ import {
 import { Logger, UseGuards, UnauthorizedException, Inject, forwardRef } from '@nestjs/common';
 import type { Server, Socket } from 'socket.io';
 import type {
+
   ClientToServerEvents,
   MatchmakingJoinPayload,
   ServerToClientEvents,
+  GameMovePayload,
+  MoveSubmittedPayload,
 } from '@chess/contracts';
 import { MatchmakingService } from './matchmaking.service';
 import { WsJwtGuard } from '../auth/guards/ws-jwt.guard';
 
 type TypedServer = Server<ClientToServerEvents, ServerToClientEvents>;
-type TypedSocket = Socket<ServerToClientEvents, ClientToServerEvents>;
+type TypedSocket = Socket<ClientToServerEvents, ServerToClientEvents>;
 
 const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN ?? 'http://localhost:3000';
 
@@ -99,10 +102,43 @@ export class MatchmakingGateway
     this.server.to(bSocketId).emit('queue.matchFound', payloadForB);
   }
 
+  joinGameRoom(socketId1: string, socketId2: string, gameId: string) {
+    this.server.in([socketId1, socketId2]).socketsJoin(gameId);
+  }
+
   emitQueueUpdate(
     socketId: string,
     payload: Parameters<ServerToClientEvents['queue.update']>[0],
   ) {
     this.server.to(socketId).emit('queue.update', payload);
+  }
+
+  emitGameAborted(gameId: string, reason: string) {
+    // We need to emit to the players. Since we don't have a room for the game yet (unless we join them),
+    // we might need to look up sockets or use a room if we joined them.
+    // In finalizeMatch we didn't join them to a room.
+    // But we can iterate or use a stored mapping.
+    // For now, let's assume we should have joined them to a room or we need to look them up.
+    // Actually, let's just emit to all for now or better, join them to a room in finalizeMatch?
+    // In finalizeMatch we have socket IDs.
+    // Let's update finalizeMatch to join them to a room? 
+    // Or just emit to the gameId room if we join them.
+
+    // Assuming we join them to a room named gameId.
+    this.server.to(gameId).emit('game:aborted', { gameId, reason });
+  }
+
+  @SubscribeMessage('game:move')
+  async handleMove(
+    @ConnectedSocket() client: TypedSocket,
+    @MessageBody() payload: MoveSubmittedPayload,
+  ) {
+    await this.matchmakingService.handleMove(payload.gameId);
+    // Here we would also relay the move to the opponent
+    const gameMovePayload: GameMovePayload = {
+      gameId: payload.gameId,
+      move: payload.san,
+    };
+    client.to(payload.gameId).emit('game:move', gameMovePayload);
   }
 }

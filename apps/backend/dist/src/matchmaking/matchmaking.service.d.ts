@@ -13,6 +13,7 @@ export declare class MatchmakingService {
     private readonly timers;
     constructor(prisma: PrismaService, redis: RedisService, gateway: MatchmakingGateway);
     joinQueue(socket: TypedSocket, payload: MatchmakingJoinPayload): Promise<MatchmakingQueuedAck>;
+    removeByUser(userId: string): Promise<void>;
     leaveQueue(socketId: string, queueId: string): Promise<void>;
     removeBySocket(socketId: string): Promise<void>;
     private addToMemoryQueue;
@@ -26,6 +27,10 @@ export declare class MatchmakingService {
     private handleExpansionTick;
     private tryMatch;
     private finalizeMatch;
+    private readonly abortTimers;
+    private scheduleAbortCheck;
+    handleMove(gameId: string): Promise<void>;
+    private checkAndAbortGame;
     private toRatingSnapshot;
     private mapTimeControl;
 }

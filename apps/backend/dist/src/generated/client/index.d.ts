@@ -42,11 +42,25 @@ export namespace $Enums {
 
 export type TimeControl = (typeof TimeControl)[keyof typeof TimeControl]
 
+
+export const GameStatus: {
+  WAITING_FOR_START: 'WAITING_FOR_START',
+  IN_PROGRESS: 'IN_PROGRESS',
+  COMPLETED: 'COMPLETED',
+  ABORTED: 'ABORTED'
+};
+
+export type GameStatus = (typeof GameStatus)[keyof typeof GameStatus]
+
 }
 
 export type TimeControl = $Enums.TimeControl
 
 export const TimeControl: typeof $Enums.TimeControl
+
+export type GameStatus = $Enums.GameStatus
+
+export const GameStatus: typeof $Enums.GameStatus
 
 /**
  * ##  Prisma Client ʲˢ
@@ -3643,6 +3657,7 @@ export namespace Prisma {
     id: string | null
     createdAt: Date | null
     timeControl: $Enums.TimeControl | null
+    status: $Enums.GameStatus | null
     whiteUserId: string | null
     blackUserId: string | null
     whiteRating: number | null
@@ -3652,12 +3667,15 @@ export namespace Prisma {
     whiteVolatility: number | null
     blackVolatility: number | null
     initialFen: string | null
+    startedAt: Date | null
+    abortedAt: Date | null
   }
 
   export type GameMaxAggregateOutputType = {
     id: string | null
     createdAt: Date | null
     timeControl: $Enums.TimeControl | null
+    status: $Enums.GameStatus | null
     whiteUserId: string | null
     blackUserId: string | null
     whiteRating: number | null
@@ -3667,12 +3685,15 @@ export namespace Prisma {
     whiteVolatility: number | null
     blackVolatility: number | null
     initialFen: string | null
+    startedAt: Date | null
+    abortedAt: Date | null
   }
 
   export type GameCountAggregateOutputType = {
     id: number
     createdAt: number
     timeControl: number
+    status: number
     whiteUserId: number
     blackUserId: number
     whiteRating: number
@@ -3682,6 +3703,8 @@ export namespace Prisma {
     whiteVolatility: number
     blackVolatility: number
     initialFen: number
+    startedAt: number
+    abortedAt: number
     _all: number
   }
 
@@ -3708,6 +3731,7 @@ export namespace Prisma {
     id?: true
     createdAt?: true
     timeControl?: true
+    status?: true
     whiteUserId?: true
     blackUserId?: true
     whiteRating?: true
@@ -3717,12 +3741,15 @@ export namespace Prisma {
     whiteVolatility?: true
     blackVolatility?: true
     initialFen?: true
+    startedAt?: true
+    abortedAt?: true
   }
 
   export type GameMaxAggregateInputType = {
     id?: true
     createdAt?: true
     timeControl?: true
+    status?: true
     whiteUserId?: true
     blackUserId?: true
     whiteRating?: true
@@ -3732,12 +3759,15 @@ export namespace Prisma {
     whiteVolatility?: true
     blackVolatility?: true
     initialFen?: true
+    startedAt?: true
+    abortedAt?: true
   }
 
   export type GameCountAggregateInputType = {
     id?: true
     createdAt?: true
     timeControl?: true
+    status?: true
     whiteUserId?: true
     blackUserId?: true
     whiteRating?: true
@@ -3747,6 +3777,8 @@ export namespace Prisma {
     whiteVolatility?: true
     blackVolatility?: true
     initialFen?: true
+    startedAt?: true
+    abortedAt?: true
     _all?: true
   }
 
@@ -3840,6 +3872,7 @@ export namespace Prisma {
     id: string
     createdAt: Date
     timeControl: $Enums.TimeControl
+    status: $Enums.GameStatus
     whiteUserId: string | null
     blackUserId: string | null
     whiteRating: number
@@ -3849,6 +3882,8 @@ export namespace Prisma {
     whiteVolatility: number
     blackVolatility: number
     initialFen: string
+    startedAt: Date | null
+    abortedAt: Date | null
     _count: GameCountAggregateOutputType | null
     _avg: GameAvgAggregateOutputType | null
     _sum: GameSumAggregateOutputType | null
@@ -3874,6 +3909,7 @@ export namespace Prisma {
     id?: boolean
     createdAt?: boolean
     timeControl?: boolean
+    status?: boolean
     whiteUserId?: boolean
     blackUserId?: boolean
     whiteRating?: boolean
@@ -3883,6 +3919,8 @@ export namespace Prisma {
     whiteVolatility?: boolean
     blackVolatility?: boolean
     initialFen?: boolean
+    startedAt?: boolean
+    abortedAt?: boolean
     whiteUser?: boolean | Game$whiteUserArgs<ExtArgs>
     blackUser?: boolean | Game$blackUserArgs<ExtArgs>
   }, ExtArgs["result"]["game"]>
@@ -3891,6 +3929,7 @@ export namespace Prisma {
     id?: boolean
     createdAt?: boolean
     timeControl?: boolean
+    status?: boolean
     whiteUserId?: boolean
     blackUserId?: boolean
     whiteRating?: boolean
@@ -3900,6 +3939,8 @@ export namespace Prisma {
     whiteVolatility?: boolean
     blackVolatility?: boolean
     initialFen?: boolean
+    startedAt?: boolean
+    abortedAt?: boolean
     whiteUser?: boolean | Game$whiteUserArgs<ExtArgs>
     blackUser?: boolean | Game$blackUserArgs<ExtArgs>
   }, ExtArgs["result"]["game"]>
@@ -3908,6 +3949,7 @@ export namespace Prisma {
     id?: boolean
     createdAt?: boolean
     timeControl?: boolean
+    status?: boolean
     whiteUserId?: boolean
     blackUserId?: boolean
     whiteRating?: boolean
@@ -3917,6 +3959,8 @@ export namespace Prisma {
     whiteVolatility?: boolean
     blackVolatility?: boolean
     initialFen?: boolean
+    startedAt?: boolean
+    abortedAt?: boolean
     whiteUser?: boolean | Game$whiteUserArgs<ExtArgs>
     blackUser?: boolean | Game$blackUserArgs<ExtArgs>
   }, ExtArgs["result"]["game"]>
@@ -3925,6 +3969,7 @@ export namespace Prisma {
     id?: boolean
     createdAt?: boolean
     timeControl?: boolean
+    status?: boolean
     whiteUserId?: boolean
     blackUserId?: boolean
     whiteRating?: boolean
@@ -3934,9 +3979,11 @@ export namespace Prisma {
     whiteVolatility?: boolean
     blackVolatility?: boolean
     initialFen?: boolean
+    startedAt?: boolean
+    abortedAt?: boolean
   }
 
-  export type GameOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "createdAt" | "timeControl" | "whiteUserId" | "blackUserId" | "whiteRating" | "blackRating" | "whiteDeviation" | "blackDeviation" | "whiteVolatility" | "blackVolatility" | "initialFen", ExtArgs["result"]["game"]>
+  export type GameOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "createdAt" | "timeControl" | "status" | "whiteUserId" | "blackUserId" | "whiteRating" | "blackRating" | "whiteDeviation" | "blackDeviation" | "whiteVolatility" | "blackVolatility" | "initialFen" | "startedAt" | "abortedAt", ExtArgs["result"]["game"]>
   export type GameInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     whiteUser?: boolean | Game$whiteUserArgs<ExtArgs>
     blackUser?: boolean | Game$blackUserArgs<ExtArgs>
@@ -3960,6 +4007,7 @@ export namespace Prisma {
       id: string
       createdAt: Date
       timeControl: $Enums.TimeControl
+      status: $Enums.GameStatus
       whiteUserId: string | null
       blackUserId: string | null
       whiteRating: number
@@ -3969,6 +4017,8 @@ export namespace Prisma {
       whiteVolatility: number
       blackVolatility: number
       initialFen: string
+      startedAt: Date | null
+      abortedAt: Date | null
     }, ExtArgs["result"]["game"]>
     composites: {}
   }
@@ -4397,6 +4447,7 @@ export namespace Prisma {
     readonly id: FieldRef<"Game", 'String'>
     readonly createdAt: FieldRef<"Game", 'DateTime'>
     readonly timeControl: FieldRef<"Game", 'TimeControl'>
+    readonly status: FieldRef<"Game", 'GameStatus'>
     readonly whiteUserId: FieldRef<"Game", 'String'>
     readonly blackUserId: FieldRef<"Game", 'String'>
     readonly whiteRating: FieldRef<"Game", 'Int'>
@@ -4406,6 +4457,8 @@ export namespace Prisma {
     readonly whiteVolatility: FieldRef<"Game", 'Float'>
     readonly blackVolatility: FieldRef<"Game", 'Float'>
     readonly initialFen: FieldRef<"Game", 'String'>
+    readonly startedAt: FieldRef<"Game", 'DateTime'>
+    readonly abortedAt: FieldRef<"Game", 'DateTime'>
   }
     
 
@@ -4916,6 +4969,7 @@ export namespace Prisma {
     id: 'id',
     createdAt: 'createdAt',
     timeControl: 'timeControl',
+    status: 'status',
     whiteUserId: 'whiteUserId',
     blackUserId: 'blackUserId',
     whiteRating: 'whiteRating',
@@ -4924,7 +4978,9 @@ export namespace Prisma {
     blackDeviation: 'blackDeviation',
     whiteVolatility: 'whiteVolatility',
     blackVolatility: 'blackVolatility',
-    initialFen: 'initialFen'
+    initialFen: 'initialFen',
+    startedAt: 'startedAt',
+    abortedAt: 'abortedAt'
   };
 
   export type GameScalarFieldEnum = (typeof GameScalarFieldEnum)[keyof typeof GameScalarFieldEnum]
@@ -5033,6 +5089,20 @@ export namespace Prisma {
    * Reference to a field of type 'Float[]'
    */
   export type ListFloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float[]'>
+    
+
+
+  /**
+   * Reference to a field of type 'GameStatus'
+   */
+  export type EnumGameStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'GameStatus'>
+    
+
+
+  /**
+   * Reference to a field of type 'GameStatus[]'
+   */
+  export type ListEnumGameStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'GameStatus[]'>
     
   /**
    * Deep Input Types
@@ -5257,6 +5327,7 @@ export namespace Prisma {
     id?: StringFilter<"Game"> | string
     createdAt?: DateTimeFilter<"Game"> | Date | string
     timeControl?: EnumTimeControlFilter<"Game"> | $Enums.TimeControl
+    status?: EnumGameStatusFilter<"Game"> | $Enums.GameStatus
     whiteUserId?: StringNullableFilter<"Game"> | string | null
     blackUserId?: StringNullableFilter<"Game"> | string | null
     whiteRating?: IntFilter<"Game"> | number
@@ -5266,6 +5337,8 @@ export namespace Prisma {
     whiteVolatility?: FloatFilter<"Game"> | number
     blackVolatility?: FloatFilter<"Game"> | number
     initialFen?: StringFilter<"Game"> | string
+    startedAt?: DateTimeNullableFilter<"Game"> | Date | string | null
+    abortedAt?: DateTimeNullableFilter<"Game"> | Date | string | null
     whiteUser?: XOR<UserNullableScalarRelationFilter, UserWhereInput> | null
     blackUser?: XOR<UserNullableScalarRelationFilter, UserWhereInput> | null
   }
@@ -5274,6 +5347,7 @@ export namespace Prisma {
     id?: SortOrder
     createdAt?: SortOrder
     timeControl?: SortOrder
+    status?: SortOrder
     whiteUserId?: SortOrderInput | SortOrder
     blackUserId?: SortOrderInput | SortOrder
     whiteRating?: SortOrder
@@ -5283,6 +5357,8 @@ export namespace Prisma {
     whiteVolatility?: SortOrder
     blackVolatility?: SortOrder
     initialFen?: SortOrder
+    startedAt?: SortOrderInput | SortOrder
+    abortedAt?: SortOrderInput | SortOrder
     whiteUser?: UserOrderByWithRelationInput
     blackUser?: UserOrderByWithRelationInput
   }
@@ -5294,6 +5370,7 @@ export namespace Prisma {
     NOT?: GameWhereInput | GameWhereInput[]
     createdAt?: DateTimeFilter<"Game"> | Date | string
     timeControl?: EnumTimeControlFilter<"Game"> | $Enums.TimeControl
+    status?: EnumGameStatusFilter<"Game"> | $Enums.GameStatus
     whiteUserId?: StringNullableFilter<"Game"> | string | null
     blackUserId?: StringNullableFilter<"Game"> | string | null
     whiteRating?: IntFilter<"Game"> | number
@@ -5303,6 +5380,8 @@ export namespace Prisma {
     whiteVolatility?: FloatFilter<"Game"> | number
     blackVolatility?: FloatFilter<"Game"> | number
     initialFen?: StringFilter<"Game"> | string
+    startedAt?: DateTimeNullableFilter<"Game"> | Date | string | null
+    abortedAt?: DateTimeNullableFilter<"Game"> | Date | string | null
     whiteUser?: XOR<UserNullableScalarRelationFilter, UserWhereInput> | null
     blackUser?: XOR<UserNullableScalarRelationFilter, UserWhereInput> | null
   }, "id">
@@ -5311,6 +5390,7 @@ export namespace Prisma {
     id?: SortOrder
     createdAt?: SortOrder
     timeControl?: SortOrder
+    status?: SortOrder
     whiteUserId?: SortOrderInput | SortOrder
     blackUserId?: SortOrderInput | SortOrder
     whiteRating?: SortOrder
@@ -5320,6 +5400,8 @@ export namespace Prisma {
     whiteVolatility?: SortOrder
     blackVolatility?: SortOrder
     initialFen?: SortOrder
+    startedAt?: SortOrderInput | SortOrder
+    abortedAt?: SortOrderInput | SortOrder
     _count?: GameCountOrderByAggregateInput
     _avg?: GameAvgOrderByAggregateInput
     _max?: GameMaxOrderByAggregateInput
@@ -5334,6 +5416,7 @@ export namespace Prisma {
     id?: StringWithAggregatesFilter<"Game"> | string
     createdAt?: DateTimeWithAggregatesFilter<"Game"> | Date | string
     timeControl?: EnumTimeControlWithAggregatesFilter<"Game"> | $Enums.TimeControl
+    status?: EnumGameStatusWithAggregatesFilter<"Game"> | $Enums.GameStatus
     whiteUserId?: StringNullableWithAggregatesFilter<"Game"> | string | null
     blackUserId?: StringNullableWithAggregatesFilter<"Game"> | string | null
     whiteRating?: IntWithAggregatesFilter<"Game"> | number
@@ -5343,6 +5426,8 @@ export namespace Prisma {
     whiteVolatility?: FloatWithAggregatesFilter<"Game"> | number
     blackVolatility?: FloatWithAggregatesFilter<"Game"> | number
     initialFen?: StringWithAggregatesFilter<"Game"> | string
+    startedAt?: DateTimeNullableWithAggregatesFilter<"Game"> | Date | string | null
+    abortedAt?: DateTimeNullableWithAggregatesFilter<"Game"> | Date | string | null
   }
 
   export type UserCreateInput = {
@@ -5598,6 +5683,7 @@ export namespace Prisma {
     id?: string
     createdAt?: Date | string
     timeControl: $Enums.TimeControl
+    status?: $Enums.GameStatus
     whiteRating: number
     blackRating: number
     whiteDeviation: number
@@ -5605,6 +5691,8 @@ export namespace Prisma {
     whiteVolatility: number
     blackVolatility: number
     initialFen: string
+    startedAt?: Date | string | null
+    abortedAt?: Date | string | null
     whiteUser?: UserCreateNestedOneWithoutGamesAsWhiteInput
     blackUser?: UserCreateNestedOneWithoutGamesAsBlackInput
   }
@@ -5613,6 +5701,7 @@ export namespace Prisma {
     id?: string
     createdAt?: Date | string
     timeControl: $Enums.TimeControl
+    status?: $Enums.GameStatus
     whiteUserId?: string | null
     blackUserId?: string | null
     whiteRating: number
@@ -5622,12 +5711,15 @@ export namespace Prisma {
     whiteVolatility: number
     blackVolatility: number
     initialFen: string
+    startedAt?: Date | string | null
+    abortedAt?: Date | string | null
   }
 
   export type GameUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     timeControl?: EnumTimeControlFieldUpdateOperationsInput | $Enums.TimeControl
+    status?: EnumGameStatusFieldUpdateOperationsInput | $Enums.GameStatus
     whiteRating?: IntFieldUpdateOperationsInput | number
     blackRating?: IntFieldUpdateOperationsInput | number
     whiteDeviation?: FloatFieldUpdateOperationsInput | number
@@ -5635,6 +5727,8 @@ export namespace Prisma {
     whiteVolatility?: FloatFieldUpdateOperationsInput | number
     blackVolatility?: FloatFieldUpdateOperationsInput | number
     initialFen?: StringFieldUpdateOperationsInput | string
+    startedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    abortedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     whiteUser?: UserUpdateOneWithoutGamesAsWhiteNestedInput
     blackUser?: UserUpdateOneWithoutGamesAsBlackNestedInput
   }
@@ -5643,6 +5737,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     timeControl?: EnumTimeControlFieldUpdateOperationsInput | $Enums.TimeControl
+    status?: EnumGameStatusFieldUpdateOperationsInput | $Enums.GameStatus
     whiteUserId?: NullableStringFieldUpdateOperationsInput | string | null
     blackUserId?: NullableStringFieldUpdateOperationsInput | string | null
     whiteRating?: IntFieldUpdateOperationsInput | number
@@ -5652,12 +5747,15 @@ export namespace Prisma {
     whiteVolatility?: FloatFieldUpdateOperationsInput | number
     blackVolatility?: FloatFieldUpdateOperationsInput | number
     initialFen?: StringFieldUpdateOperationsInput | string
+    startedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    abortedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   }
 
   export type GameCreateManyInput = {
     id?: string
     createdAt?: Date | string
     timeControl: $Enums.TimeControl
+    status?: $Enums.GameStatus
     whiteUserId?: string | null
     blackUserId?: string | null
     whiteRating: number
@@ -5667,12 +5765,15 @@ export namespace Prisma {
     whiteVolatility: number
     blackVolatility: number
     initialFen: string
+    startedAt?: Date | string | null
+    abortedAt?: Date | string | null
   }
 
   export type GameUpdateManyMutationInput = {
     id?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     timeControl?: EnumTimeControlFieldUpdateOperationsInput | $Enums.TimeControl
+    status?: EnumGameStatusFieldUpdateOperationsInput | $Enums.GameStatus
     whiteRating?: IntFieldUpdateOperationsInput | number
     blackRating?: IntFieldUpdateOperationsInput | number
     whiteDeviation?: FloatFieldUpdateOperationsInput | number
@@ -5680,12 +5781,15 @@ export namespace Prisma {
     whiteVolatility?: FloatFieldUpdateOperationsInput | number
     blackVolatility?: FloatFieldUpdateOperationsInput | number
     initialFen?: StringFieldUpdateOperationsInput | string
+    startedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    abortedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   }
 
   export type GameUncheckedUpdateManyInput = {
     id?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     timeControl?: EnumTimeControlFieldUpdateOperationsInput | $Enums.TimeControl
+    status?: EnumGameStatusFieldUpdateOperationsInput | $Enums.GameStatus
     whiteUserId?: NullableStringFieldUpdateOperationsInput | string | null
     blackUserId?: NullableStringFieldUpdateOperationsInput | string | null
     whiteRating?: IntFieldUpdateOperationsInput | number
@@ -5695,6 +5799,8 @@ export namespace Prisma {
     whiteVolatility?: FloatFieldUpdateOperationsInput | number
     blackVolatility?: FloatFieldUpdateOperationsInput | number
     initialFen?: StringFieldUpdateOperationsInput | string
+    startedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    abortedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   }
 
   export type StringFilter<$PrismaModel = never> = {
@@ -6091,6 +6197,13 @@ export namespace Prisma {
     _max?: NestedFloatFilter<$PrismaModel>
   }
 
+  export type EnumGameStatusFilter<$PrismaModel = never> = {
+    equals?: $Enums.GameStatus | EnumGameStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.GameStatus[] | ListEnumGameStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.GameStatus[] | ListEnumGameStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumGameStatusFilter<$PrismaModel> | $Enums.GameStatus
+  }
+
   export type UserNullableScalarRelationFilter = {
     is?: UserWhereInput | null
     isNot?: UserWhereInput | null
@@ -6100,6 +6213,7 @@ export namespace Prisma {
     id?: SortOrder
     createdAt?: SortOrder
     timeControl?: SortOrder
+    status?: SortOrder
     whiteUserId?: SortOrder
     blackUserId?: SortOrder
     whiteRating?: SortOrder
@@ -6109,6 +6223,8 @@ export namespace Prisma {
     whiteVolatility?: SortOrder
     blackVolatility?: SortOrder
     initialFen?: SortOrder
+    startedAt?: SortOrder
+    abortedAt?: SortOrder
   }
 
   export type GameAvgOrderByAggregateInput = {
@@ -6124,6 +6240,7 @@ export namespace Prisma {
     id?: SortOrder
     createdAt?: SortOrder
     timeControl?: SortOrder
+    status?: SortOrder
     whiteUserId?: SortOrder
     blackUserId?: SortOrder
     whiteRating?: SortOrder
@@ -6133,12 +6250,15 @@ export namespace Prisma {
     whiteVolatility?: SortOrder
     blackVolatility?: SortOrder
     initialFen?: SortOrder
+    startedAt?: SortOrder
+    abortedAt?: SortOrder
   }
 
   export type GameMinOrderByAggregateInput = {
     id?: SortOrder
     createdAt?: SortOrder
     timeControl?: SortOrder
+    status?: SortOrder
     whiteUserId?: SortOrder
     blackUserId?: SortOrder
     whiteRating?: SortOrder
@@ -6148,6 +6268,8 @@ export namespace Prisma {
     whiteVolatility?: SortOrder
     blackVolatility?: SortOrder
     initialFen?: SortOrder
+    startedAt?: SortOrder
+    abortedAt?: SortOrder
   }
 
   export type GameSumOrderByAggregateInput = {
@@ -6157,6 +6279,16 @@ export namespace Prisma {
     blackDeviation?: SortOrder
     whiteVolatility?: SortOrder
     blackVolatility?: SortOrder
+  }
+
+  export type EnumGameStatusWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.GameStatus | EnumGameStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.GameStatus[] | ListEnumGameStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.GameStatus[] | ListEnumGameStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumGameStatusWithAggregatesFilter<$PrismaModel> | $Enums.GameStatus
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumGameStatusFilter<$PrismaModel>
+    _max?: NestedEnumGameStatusFilter<$PrismaModel>
   }
 
   export type RatingCreateNestedManyWithoutUserInput = {
@@ -6357,6 +6489,10 @@ export namespace Prisma {
     create?: XOR<UserCreateWithoutGamesAsBlackInput, UserUncheckedCreateWithoutGamesAsBlackInput>
     connectOrCreate?: UserCreateOrConnectWithoutGamesAsBlackInput
     connect?: UserWhereUniqueInput
+  }
+
+  export type EnumGameStatusFieldUpdateOperationsInput = {
+    set?: $Enums.GameStatus
   }
 
   export type UserUpdateOneWithoutGamesAsWhiteNestedInput = {
@@ -6613,6 +6749,23 @@ export namespace Prisma {
     _max?: NestedFloatFilter<$PrismaModel>
   }
 
+  export type NestedEnumGameStatusFilter<$PrismaModel = never> = {
+    equals?: $Enums.GameStatus | EnumGameStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.GameStatus[] | ListEnumGameStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.GameStatus[] | ListEnumGameStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumGameStatusFilter<$PrismaModel> | $Enums.GameStatus
+  }
+
+  export type NestedEnumGameStatusWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.GameStatus | EnumGameStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.GameStatus[] | ListEnumGameStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.GameStatus[] | ListEnumGameStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumGameStatusWithAggregatesFilter<$PrismaModel> | $Enums.GameStatus
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumGameStatusFilter<$PrismaModel>
+    _max?: NestedEnumGameStatusFilter<$PrismaModel>
+  }
+
   export type RatingCreateWithoutUserInput = {
     id?: string
     timeControl: $Enums.TimeControl
@@ -6645,6 +6798,7 @@ export namespace Prisma {
     id?: string
     createdAt?: Date | string
     timeControl: $Enums.TimeControl
+    status?: $Enums.GameStatus
     whiteRating: number
     blackRating: number
     whiteDeviation: number
@@ -6652,6 +6806,8 @@ export namespace Prisma {
     whiteVolatility: number
     blackVolatility: number
     initialFen: string
+    startedAt?: Date | string | null
+    abortedAt?: Date | string | null
     blackUser?: UserCreateNestedOneWithoutGamesAsBlackInput
   }
 
@@ -6659,6 +6815,7 @@ export namespace Prisma {
     id?: string
     createdAt?: Date | string
     timeControl: $Enums.TimeControl
+    status?: $Enums.GameStatus
     blackUserId?: string | null
     whiteRating: number
     blackRating: number
@@ -6667,6 +6824,8 @@ export namespace Prisma {
     whiteVolatility: number
     blackVolatility: number
     initialFen: string
+    startedAt?: Date | string | null
+    abortedAt?: Date | string | null
   }
 
   export type GameCreateOrConnectWithoutWhiteUserInput = {
@@ -6683,6 +6842,7 @@ export namespace Prisma {
     id?: string
     createdAt?: Date | string
     timeControl: $Enums.TimeControl
+    status?: $Enums.GameStatus
     whiteRating: number
     blackRating: number
     whiteDeviation: number
@@ -6690,6 +6850,8 @@ export namespace Prisma {
     whiteVolatility: number
     blackVolatility: number
     initialFen: string
+    startedAt?: Date | string | null
+    abortedAt?: Date | string | null
     whiteUser?: UserCreateNestedOneWithoutGamesAsWhiteInput
   }
 
@@ -6697,6 +6859,7 @@ export namespace Prisma {
     id?: string
     createdAt?: Date | string
     timeControl: $Enums.TimeControl
+    status?: $Enums.GameStatus
     whiteUserId?: string | null
     whiteRating: number
     blackRating: number
@@ -6705,6 +6868,8 @@ export namespace Prisma {
     whiteVolatility: number
     blackVolatility: number
     initialFen: string
+    startedAt?: Date | string | null
+    abortedAt?: Date | string | null
   }
 
   export type GameCreateOrConnectWithoutBlackUserInput = {
@@ -6769,6 +6934,7 @@ export namespace Prisma {
     id?: StringFilter<"Game"> | string
     createdAt?: DateTimeFilter<"Game"> | Date | string
     timeControl?: EnumTimeControlFilter<"Game"> | $Enums.TimeControl
+    status?: EnumGameStatusFilter<"Game"> | $Enums.GameStatus
     whiteUserId?: StringNullableFilter<"Game"> | string | null
     blackUserId?: StringNullableFilter<"Game"> | string | null
     whiteRating?: IntFilter<"Game"> | number
@@ -6778,6 +6944,8 @@ export namespace Prisma {
     whiteVolatility?: FloatFilter<"Game"> | number
     blackVolatility?: FloatFilter<"Game"> | number
     initialFen?: StringFilter<"Game"> | string
+    startedAt?: DateTimeNullableFilter<"Game"> | Date | string | null
+    abortedAt?: DateTimeNullableFilter<"Game"> | Date | string | null
   }
 
   export type GameUpsertWithWhereUniqueWithoutBlackUserInput = {
@@ -7169,6 +7337,7 @@ export namespace Prisma {
     id?: string
     createdAt?: Date | string
     timeControl: $Enums.TimeControl
+    status?: $Enums.GameStatus
     blackUserId?: string | null
     whiteRating: number
     blackRating: number
@@ -7177,12 +7346,15 @@ export namespace Prisma {
     whiteVolatility: number
     blackVolatility: number
     initialFen: string
+    startedAt?: Date | string | null
+    abortedAt?: Date | string | null
   }
 
   export type GameCreateManyBlackUserInput = {
     id?: string
     createdAt?: Date | string
     timeControl: $Enums.TimeControl
+    status?: $Enums.GameStatus
     whiteUserId?: string | null
     whiteRating: number
     blackRating: number
@@ -7191,6 +7363,8 @@ export namespace Prisma {
     whiteVolatility: number
     blackVolatility: number
     initialFen: string
+    startedAt?: Date | string | null
+    abortedAt?: Date | string | null
   }
 
   export type RatingUpdateWithoutUserInput = {
@@ -7224,6 +7398,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     timeControl?: EnumTimeControlFieldUpdateOperationsInput | $Enums.TimeControl
+    status?: EnumGameStatusFieldUpdateOperationsInput | $Enums.GameStatus
     whiteRating?: IntFieldUpdateOperationsInput | number
     blackRating?: IntFieldUpdateOperationsInput | number
     whiteDeviation?: FloatFieldUpdateOperationsInput | number
@@ -7231,6 +7406,8 @@ export namespace Prisma {
     whiteVolatility?: FloatFieldUpdateOperationsInput | number
     blackVolatility?: FloatFieldUpdateOperationsInput | number
     initialFen?: StringFieldUpdateOperationsInput | string
+    startedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    abortedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     blackUser?: UserUpdateOneWithoutGamesAsBlackNestedInput
   }
 
@@ -7238,6 +7415,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     timeControl?: EnumTimeControlFieldUpdateOperationsInput | $Enums.TimeControl
+    status?: EnumGameStatusFieldUpdateOperationsInput | $Enums.GameStatus
     blackUserId?: NullableStringFieldUpdateOperationsInput | string | null
     whiteRating?: IntFieldUpdateOperationsInput | number
     blackRating?: IntFieldUpdateOperationsInput | number
@@ -7246,12 +7424,15 @@ export namespace Prisma {
     whiteVolatility?: FloatFieldUpdateOperationsInput | number
     blackVolatility?: FloatFieldUpdateOperationsInput | number
     initialFen?: StringFieldUpdateOperationsInput | string
+    startedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    abortedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   }
 
   export type GameUncheckedUpdateManyWithoutWhiteUserInput = {
     id?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     timeControl?: EnumTimeControlFieldUpdateOperationsInput | $Enums.TimeControl
+    status?: EnumGameStatusFieldUpdateOperationsInput | $Enums.GameStatus
     blackUserId?: NullableStringFieldUpdateOperationsInput | string | null
     whiteRating?: IntFieldUpdateOperationsInput | number
     blackRating?: IntFieldUpdateOperationsInput | number
@@ -7260,12 +7441,15 @@ export namespace Prisma {
     whiteVolatility?: FloatFieldUpdateOperationsInput | number
     blackVolatility?: FloatFieldUpdateOperationsInput | number
     initialFen?: StringFieldUpdateOperationsInput | string
+    startedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    abortedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   }
 
   export type GameUpdateWithoutBlackUserInput = {
     id?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     timeControl?: EnumTimeControlFieldUpdateOperationsInput | $Enums.TimeControl
+    status?: EnumGameStatusFieldUpdateOperationsInput | $Enums.GameStatus
     whiteRating?: IntFieldUpdateOperationsInput | number
     blackRating?: IntFieldUpdateOperationsInput | number
     whiteDeviation?: FloatFieldUpdateOperationsInput | number
@@ -7273,6 +7457,8 @@ export namespace Prisma {
     whiteVolatility?: FloatFieldUpdateOperationsInput | number
     blackVolatility?: FloatFieldUpdateOperationsInput | number
     initialFen?: StringFieldUpdateOperationsInput | string
+    startedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    abortedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     whiteUser?: UserUpdateOneWithoutGamesAsWhiteNestedInput
   }
 
@@ -7280,6 +7466,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     timeControl?: EnumTimeControlFieldUpdateOperationsInput | $Enums.TimeControl
+    status?: EnumGameStatusFieldUpdateOperationsInput | $Enums.GameStatus
     whiteUserId?: NullableStringFieldUpdateOperationsInput | string | null
     whiteRating?: IntFieldUpdateOperationsInput | number
     blackRating?: IntFieldUpdateOperationsInput | number
@@ -7288,12 +7475,15 @@ export namespace Prisma {
     whiteVolatility?: FloatFieldUpdateOperationsInput | number
     blackVolatility?: FloatFieldUpdateOperationsInput | number
     initialFen?: StringFieldUpdateOperationsInput | string
+    startedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    abortedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   }
 
   export type GameUncheckedUpdateManyWithoutBlackUserInput = {
     id?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     timeControl?: EnumTimeControlFieldUpdateOperationsInput | $Enums.TimeControl
+    status?: EnumGameStatusFieldUpdateOperationsInput | $Enums.GameStatus
     whiteUserId?: NullableStringFieldUpdateOperationsInput | string | null
     whiteRating?: IntFieldUpdateOperationsInput | number
     blackRating?: IntFieldUpdateOperationsInput | number
@@ -7302,6 +7492,8 @@ export namespace Prisma {
     whiteVolatility?: FloatFieldUpdateOperationsInput | number
     blackVolatility?: FloatFieldUpdateOperationsInput | number
     initialFen?: StringFieldUpdateOperationsInput | string
+    startedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    abortedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   }
 
 

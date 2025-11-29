@@ -51,6 +51,9 @@ export class MatchmakingService {
     socket: TypedSocket,
     payload: MatchmakingJoinPayload,
   ): Promise<MatchmakingQueuedAck> {
+    // Remove any existing entries for this user to prevent stale matches
+    await this.removeByUser(payload.userId);
+
     const queueId = randomUUID();
     const now = Date.now();
 
@@ -83,6 +86,16 @@ export class MatchmakingService {
       ratingRange: this.computeWindow(entry),
       nextExpansionInMs: EXPANSION_INTERVAL_MS,
     };
+  }
+
+  async removeByUser(userId: string): Promise<void> {
+    const all = [...this.queues.values()].flatMap((map) =>
+      [...map.values()].filter((entry) => entry.userId === userId),
+    );
+
+    await Promise.all(
+      all.map((entry) => this.leaveQueue(entry.socketId, entry.queueId)),
+    );
   }
 
   async leaveQueue(socketId: string, queueId: string): Promise<void> {
@@ -239,6 +252,7 @@ export class MatchmakingService {
         const b = entries[j];
 
         if (a.antiCheatOnCooldown || b.antiCheatOnCooldown) continue;
+        if (a.userId === b.userId) continue;
 
         const aWindow = this.computeWindow(a);
         const bWindow = this.computeWindow(b);
@@ -333,9 +347,22 @@ export class MatchmakingService {
       },
     });
 
+    // Fetch user data for both players
+    const [userA, userB] = await Promise.all([
+      this.prisma.user.findUnique({
+        where: { id: a.userId },
+        select: { username: true, flair: true },
+      }),
+      this.prisma.user.findUnique({
+        where: { id: b.userId },
+        select: { username: true, flair: true },
+      }),
+    ]);
+
     const basePayload: Omit<MatchFoundPayload, 'opponent'> = {
       queueId: a.queueId,
       gameId,
+      timeControl: a.timeControl,
       initialFen,
     };
 
@@ -343,6 +370,8 @@ export class MatchmakingService {
       ...basePayload,
       opponent: {
         userId: b.userId,
+        username: userB?.username || b.userId,
+        flair: userB?.flair || undefined,
         rating: this.toRatingSnapshot(b),
         latencyMs: b.latencyMs,
       },
@@ -353,10 +382,14 @@ export class MatchmakingService {
       queueId: b.queueId,
       opponent: {
         userId: a.userId,
+        username: userA?.username || a.userId,
+        flair: userA?.flair || undefined,
         rating: this.toRatingSnapshot(a),
         latencyMs: a.latencyMs,
       },
     };
+
+    this.gateway.joinGameRoom(a.socketId, b.socketId, gameId);
 
     this.gateway.emitMatchFound(
       a.socketId,
@@ -364,6 +397,68 @@ export class MatchmakingService {
       payloadForA,
       payloadForB,
     );
+
+    // Schedule abort timer (30 seconds)
+    this.scheduleAbortCheck(gameId, 30_000);
+  }
+
+  private readonly abortTimers = new Map<string, NodeJS.Timeout>();
+
+  private scheduleAbortCheck(gameId: string, delayMs: number) {
+    const timer = setTimeout(() => {
+      void this.checkAndAbortGame(gameId);
+    }, delayMs);
+
+    this.abortTimers.set(gameId, timer);
+  }
+
+  async handleMove(gameId: string): Promise<void> {
+    const timer = this.abortTimers.get(gameId);
+    if (timer) {
+      clearTimeout(timer);
+      this.abortTimers.delete(gameId);
+
+      // Update game status to IN_PROGRESS if it was waiting
+      await this.prisma.game.updateMany({
+        where: {
+          id: gameId,
+          status: 'WAITING_FOR_START',
+        },
+        data: {
+          status: 'IN_PROGRESS',
+          startedAt: new Date(),
+        },
+      });
+    }
+  }
+
+  private async checkAndAbortGame(gameId: string) {
+    const game = await this.prisma.game.findUnique({
+      where: { id: gameId },
+    });
+
+    if (!game || game.status !== 'WAITING_FOR_START') {
+      return;
+    }
+
+    // Abort the game
+    await this.prisma.game.update({
+      where: { id: gameId },
+      data: {
+        status: 'ABORTED',
+        abortedAt: new Date(),
+      },
+    });
+
+    // Notify both players
+    this.gateway.emitGameAborted(gameId, 'Players did not start the game within 30 seconds');
+
+    // Clean up timer
+    this.abortTimers.delete(gameId);
+
+    // Clean up active games set
+    const client = await this.redis.getClient();
+    await client.srem(activeGamesKey, gameId);
   }
 
   private toRatingSnapshot(entry: MatchmakingQueueEntry): RatingSnapshot {

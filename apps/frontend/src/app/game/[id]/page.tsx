@@ -1,10 +1,14 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { Chess, Square } from "chess.js";
 import { useAuthStore } from "@/state/auth-store";
+import { useGameStore } from "@/state/game/store";
 import { pieceSprite } from "@/components/piece-sprites";
 import { WinDialog } from "@/components/win-dialog";
+import { socketClient } from "@/lib/socket/client";
+import type { TimeControl } from "@chess/contracts";
 
 const files = ["a", "b", "c", "d", "e", "f", "g", "h"] as const;
 const ranks = [8, 7, 6, 5, 4, 3, 2, 1] as const;
@@ -12,9 +16,29 @@ const ranks = [8, 7, 6, 5, 4, 3, 2, 1] as const;
 const isDarkSquare = (fileIndex: number, rankIndex: number) =>
     (fileIndex + rankIndex) % 2 === 1;
 
+// Helper function to convert TimeControl to seconds
+const getTimeControlSeconds = (timeControl: TimeControl): number => {
+    switch (timeControl) {
+        case "bullet":
+            return 120; // 2 minutes
+        case "blitz":
+            return 300; // 5 minutes
+        case "rapid":
+            return 600; // 10 minutes
+        case "classical":
+            return 1800; // 30 minutes
+        default:
+            return 600; // Default to 10 minutes
+    }
+};
+
 export default function GamePage({ params }: { params: { id: string } }) {
     const { user } = useAuthStore();
+    const match = useGameStore((state) => state.match);
     const [activeTab, setActiveTab] = useState<"chat" | "notes">("chat");
+
+    // Determine initial time based on time control from match
+    const initialTime = match?.timeControl ? getTimeControlSeconds(match.timeControl) : 600;
 
     // Game state
     const [game, setGame] = useState<Chess>(new Chess());
@@ -23,11 +47,15 @@ export default function GamePage({ params }: { params: { id: string } }) {
     const [validMoves, setValidMoves] = useState<Square[]>([]);
     const [lastMove, setLastMove] = useState<{ from: Square; to: Square } | null>(null);
     const [mounted, setMounted] = useState(false);
+    const [gameAborted, setGameAborted] = useState(false);
 
     // Clock state (in seconds)
-    const [whiteTime, setWhiteTime] = useState(600); // 10 minutes
-    const [blackTime, setBlackTime] = useState(600); // 10 minutes
-    const [abortTime, setAbortTime] = useState(30); // 30 seconds abort timer
+    const [whiteTime, setWhiteTime] = useState(initialTime);
+    const [blackTime, setBlackTime] = useState(initialTime);
+    const [whiteAbortTimeLeft, setWhiteAbortTimeLeft] = useState(30); // White's 30-second countdown
+    const [blackAbortTimeLeft, setBlackAbortTimeLeft] = useState(30); // Black's 30-second countdown
+    const [whiteShowingAbortTimer, setWhiteShowingAbortTimer] = useState(true);
+    const [blackShowingAbortTimer, setBlackShowingAbortTimer] = useState(true);
     const clockIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
     // Win state
@@ -41,6 +69,51 @@ export default function GamePage({ params }: { params: { id: string } }) {
     useEffect(() => {
         setMounted(true);
     }, []);
+
+    const router = useRouter();
+
+    // Socket listeners
+    useEffect(() => {
+        const socket = socketClient();
+
+        socket.on("game:aborted", ({ reason }) => {
+            setGameAborted(true);
+            setGameEnded(true);
+        });
+
+        socket.on("game:move", ({ move }: { move: string }) => {
+            setGame((currentGame) => {
+                const newGame = new Chess(currentGame.fen());
+                try {
+                    const result = newGame.move(move);
+                    if (result) {
+                        setMoveHistory((prev) => [...prev, result.san]);
+                        setLastMove({ from: result.from, to: result.to });
+
+                        // Switch the moving player's timer from abort to game time
+                        // The move was made by the previous turn's player
+                        const movingPlayerWasWhite = currentGame.turn() === 'w';
+                        if (movingPlayerWasWhite && whiteShowingAbortTimer) {
+                            setWhiteShowingAbortTimer(false);
+                        } else if (!movingPlayerWasWhite && blackShowingAbortTimer) {
+                            setBlackShowingAbortTimer(false);
+                        }
+
+                        // TODO: Handle checkmate/game over from opponent move
+                        return newGame;
+                    }
+                } catch (e) {
+                    console.error("Invalid move received", move);
+                }
+                return currentGame;
+            });
+        });
+
+        return () => {
+            socket.off("game:aborted");
+            socket.off("game:move");
+        };
+    }, [router, whiteShowingAbortTimer, blackShowingAbortTimer]);
 
     // Helper function: Calculate Elo rating change
     const calculateRatingChange = (userWon: boolean, userRating: number, opponentRating: number): number => {
@@ -115,39 +188,47 @@ export default function GamePage({ params }: { params: { id: string } }) {
 
         clockIntervalRef.current = setInterval(() => {
             const isWhiteTurn = game.turn() === 'w';
-            const movesMade = moveHistory.length;
 
-            // If less than 2 moves (1 full round), use abort timer
-            if (movesMade < 2) {
-                setAbortTime((prev) => {
+            // Update White's clock (abort timer or game time)
+            if (whiteShowingAbortTimer) {
+                // White hasn't moved yet, count down abort timer
+                setWhiteAbortTimeLeft((prev) => {
                     const newTime = Math.max(0, prev - 1);
-                    // Check for abort timeout
                     if (newTime === 0 && prev > 0) {
-                        handleTimeOut(isWhiteTurn ? 'white' : 'black');
+                        console.log('[Clock] White abort timer expired');
                     }
                     return newTime;
                 });
-            } else {
-                // Main game clock
-                if (isWhiteTurn) {
-                    setWhiteTime((prev) => {
-                        const newTime = Math.max(0, prev - 1);
-                        // Check for timeout
-                        if (newTime === 0 && prev > 0) {
-                            handleTimeOut('white');
-                        }
-                        return newTime;
-                    });
-                } else {
-                    setBlackTime((prev) => {
-                        const newTime = Math.max(0, prev - 1);
-                        // Check for timeout
-                        if (newTime === 0 && prev > 0) {
-                            handleTimeOut('black');
-                        }
-                        return newTime;
-                    });
-                }
+            } else if (isWhiteTurn && moveHistory.length > 0) {
+                // White has moved and it's their turn, count down game time
+                setWhiteTime((prev) => {
+                    const newTime = Math.max(0, prev - 1);
+                    if (newTime === 0 && prev > 0) {
+                        handleTimeOut('white');
+                    }
+                    return newTime;
+                });
+            }
+
+            // Update Black's clock (abort timer or game time)
+            if (blackShowingAbortTimer) {
+                // Black hasn't moved yet, count down abort timer
+                setBlackAbortTimeLeft((prev) => {
+                    const newTime = Math.max(0, prev - 1);
+                    if (newTime === 0 && prev > 0) {
+                        console.log('[Clock] Black abort timer expired');
+                    }
+                    return newTime;
+                });
+            } else if (!isWhiteTurn && moveHistory.length > 0) {
+                // Black has moved and it's their turn, count down game time
+                setBlackTime((prev) => {
+                    const newTime = Math.max(0, prev - 1);
+                    if (newTime === 0 && prev > 0) {
+                        handleTimeOut('black');
+                    }
+                    return newTime;
+                });
             }
         }, 1000);
 
@@ -157,14 +238,9 @@ export default function GamePage({ params }: { params: { id: string } }) {
                 clockIntervalRef.current = null;
             }
         };
-    }, [game, mounted, moveHistory.length, gameEnded]);
+    }, [game, mounted, moveHistory.length, gameEnded, whiteShowingAbortTimer, blackShowingAbortTimer]);
 
-    // Reset abort timer when turn changes (only relevant for first move)
-    useEffect(() => {
-        if (moveHistory.length < 2) {
-            setAbortTime(30);
-        }
-    }, [moveHistory.length]);
+
 
     const formatTime = (seconds: number) => {
         const mins = Math.floor(seconds / 60);
@@ -172,26 +248,33 @@ export default function GamePage({ params }: { params: { id: string } }) {
         return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     };
 
-    // Dummy opponent data
-    const opponent = {
-        username: "Grandmaster Gary",
-        rating: 2800,
-        ratingDiff: -5,
+    // Get opponent data from match
+    const opponent = match?.opponent ? {
+        username: match.opponent.username,
+        flair: match.opponent.flair,
+        displayName: match.opponent.flair
+            ? `${match.opponent.username}(${match.opponent.flair})`
+            : match.opponent.username,
+        rating: match.opponent.rating.rating,
         avatar: null,
         isOnline: true,
+    } : {
+        username: "Opponent",
+        flair: undefined,
+        displayName: "Opponent",
+        rating: 1500,
+        avatar: null,
+        isOnline: false,
     };
 
-    // Dummy user data (for display)
+    // Current user data (for display)
     const currentUser = {
         username: user?.username || "You",
-        rating: 1500,
-        ratingDiff: +6,
-    };
-
-    // Dummy time control
-    const timeControl = {
-        white: "10:00",
-        black: "09:45",
+        flair: user?.flair,
+        displayName: user?.flair
+            ? `${user.username}(${user.flair})`
+            : (user?.username || "You"),
+        rating: 1500, // TODO: Fetch from user's rating for this time control
     };
 
     const handleSquareClick = (square: Square) => {
@@ -240,6 +323,22 @@ export default function GamePage({ params }: { params: { id: string } }) {
                         setMoveHistory([...moveHistory, move.san]);
                         setLastMove({ from: selectedSquare, to: square });
 
+                        // Switch the moving player's timer from abort to game time
+                        const movingPlayerIsWhite = game.turn() === 'w';
+                        if (movingPlayerIsWhite && whiteShowingAbortTimer) {
+                            setWhiteShowingAbortTimer(false);
+                        } else if (!movingPlayerIsWhite && blackShowingAbortTimer) {
+                            setBlackShowingAbortTimer(false);
+                        }
+
+                        // Emit move to backend
+                        socketClient().emit("game:move", {
+                            gameId: params.id,
+                            san: move.san,
+                            moveTimeMs: 0, // TODO: Implement move timer
+                            clientMoveId: crypto.randomUUID(),
+                        });
+
                         // Check for checkmate
                         if (newGame.isCheckmate()) {
                             // The player who just moved is the winner
@@ -261,11 +360,10 @@ export default function GamePage({ params }: { params: { id: string } }) {
     if (!mounted) return null;
 
     const board = game.board();
-    const isAbortPhase = moveHistory.length < 2;
 
     return (
-        <div className="max-h-[calc(100vh-64px)] bg-slate-950 flex flex-col ml-10 mr-10">
-            <main className="flex-1 grid grid-cols-1 lg:grid-cols-[300px_1fr_300px] h-[calc(100vh-64px)] overflow-hidden">
+        <div className="max-h-[calc(100vh-62px)] bg-slate-950 flex flex-col ml-10 mr-10">
+            <main className="flex-1 grid grid-cols-1 lg:grid-cols-[300px_1fr_300px] h-[calc(100vh-62px)] overflow-hidden">
 
                 {/* LEFT COLUMN: Game Info & Chat */}
                 <div className="hidden lg:flex flex-col border-r border-white/10 bg-slate-900/50 backdrop-blur-sm">
@@ -273,11 +371,15 @@ export default function GamePage({ params }: { params: { id: string } }) {
                     <div className="p-4 border-b border-white/10 bg-slate-900/80">
                         <div className="flex items-center gap-3 mb-4">
                             <div className="h-10 w-10 rounded bg-slate-800 flex items-center justify-center text-2xl">
-                                🐇
+                                {match?.timeControl === 'bullet' ? '⚡' :
+                                    match?.timeControl === 'blitz' ? '🐇' :
+                                        match?.timeControl === 'rapid' ? '🏃' : '🐢'}
                             </div>
                             <div>
-                                <div className="text-sm font-bold text-white">10+0 • Rated • Rapid</div>
-                                <div className="text-xs text-slate-400">3 hours ago</div>
+                                <div className="text-sm font-bold text-white">
+                                    {match?.timeControl ? `${getTimeControlSeconds(match.timeControl) / 60}+0 • Rated • ${match.timeControl.charAt(0).toUpperCase() + match.timeControl.slice(1)}` : 'Loading...'}
+                                </div>
+                                <div className="text-xs text-slate-400">Just now</div>
                             </div>
                         </div>
 
@@ -285,16 +387,14 @@ export default function GamePage({ params }: { params: { id: string } }) {
                             <div className="flex items-center justify-between text-sm">
                                 <div className="flex items-center gap-2">
                                     <span className="h-2 w-2 rounded-full bg-white border border-slate-600"></span>
-                                    <span className="text-slate-300">{currentUser.username} ({currentUser.rating})</span>
+                                    <span className="text-slate-300">{currentUser.displayName} ({currentUser.rating})</span>
                                 </div>
-                                <span className="text-emerald-400 font-mono text-xs">+{currentUser.ratingDiff}</span>
                             </div>
                             <div className="flex items-center justify-between text-sm">
                                 <div className="flex items-center gap-2">
                                     <span className="h-2 w-2 rounded-full bg-slate-900 border border-slate-600"></span>
-                                    <span className="text-slate-300">{opponent.username} ({opponent.rating})</span>
+                                    <span className="text-slate-300">{opponent.displayName} ({opponent.rating})</span>
                                 </div>
-                                <span className="text-red-400 font-mono text-xs">{opponent.ratingDiff}</span>
                             </div>
                         </div>
 
@@ -351,7 +451,7 @@ export default function GamePage({ params }: { params: { id: string } }) {
 
                 {/* CENTER COLUMN: Board */}
                 <div className="flex justify-center bg-slate-950">
-                    <div className="w-full max-w-[570px] h-full max-h-[calc(100vh-100px)] aspect-square shadow-2xl">
+                    <div className="w-full max-w-[500px] max-h-[calc(100vh-100px)] aspect-square shadow-2xl">
                         <div className="w-full h-full rounded-lg overflow-hidden shadow-2xl border border-white/10 relative">
                             <div className="grid grid-cols-8 w-full h-full">
                                 {ranks.map((rank, rankIndex) =>
@@ -419,13 +519,13 @@ export default function GamePage({ params }: { params: { id: string } }) {
                         <div className="flex items-center justify-between mb-2">
                             <div className="flex items-center gap-2">
                                 <span className="h-2 w-2 rounded-full bg-emerald-500"></span>
-                                <span className="font-bold text-slate-200">{opponent.username}</span>
+                                <span className="font-bold text-slate-200">{opponent.displayName}</span>
                             </div>
-                            <span className="text-slate-400 text-sm">{opponent.rating} <span className="text-red-400 text-xs">{opponent.ratingDiff}</span></span>
+                            <span className="text-slate-400 text-sm">{opponent.rating}</span>
                         </div>
                         <div className={`rounded px-4 py-2 text-right transition-colors ${game.turn() === 'b' ? 'bg-slate-700 text-white' : 'bg-slate-900 text-slate-400'}`}>
                             <span className="text-4xl font-mono font-bold">
-                                {isAbortPhase && game.turn() === 'b' ? formatTime(abortTime) : formatTime(blackTime)}
+                                {blackShowingAbortTimer ? formatTime(blackAbortTimeLeft) : formatTime(blackTime)}
                             </span>
                         </div>
                     </div>
@@ -457,32 +557,50 @@ export default function GamePage({ params }: { params: { id: string } }) {
                         </table>
                     </div>
 
-                    {/* Action Buttons */}
-                    <div className="grid grid-cols-1 divide-y divide-white/10 bg-slate-800/50">
-                        <button className="py-4 text-sm font-medium text-slate-300 hover:bg-white/5 hover:text-white transition uppercase tracking-wider">
-                            Rematch
-                        </button>
-                        <button className="py-4 text-sm font-medium text-slate-300 hover:bg-white/5 hover:text-white transition uppercase tracking-wider">
-                            New Opponent
-                        </button>
-                        <button className="py-4 text-sm font-medium text-slate-300 hover:bg-white/5 hover:text-white transition uppercase tracking-wider">
-                            Analysis Board
-                        </button>
-                    </div>
+                    {/* Action Buttons / Game Status */}
+                    {gameAborted ? (
+                        <div className="p-6 bg-red-900/20 border-t border-red-500/30">
+                            <div className="flex flex-col items-center gap-3">
+                                <div className="text-red-400 text-5xl">⚠️</div>
+                                <h3 className="text-lg font-bold text-red-300">Game Aborted</h3>
+                                <p className="text-sm text-slate-400 text-center">
+                                    The game was aborted because no moves were made within the time limit.
+                                </p>
+                                <button
+                                    onClick={() => router.push("/")}
+                                    className="mt-2 rounded-xl bg-slate-700 px-6 py-2 font-medium text-white transition hover:bg-slate-600"
+                                >
+                                    Return Home
+                                </button>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 divide-y divide-white/10 bg-slate-800/50">
+                            <button className="py-4 text-sm font-medium text-slate-300 hover:bg-white/5 hover:text-white transition uppercase tracking-wider">
+                                Rematch
+                            </button>
+                            <button className="py-4 text-sm font-medium text-slate-300 hover:bg-white/5 hover:text-white transition uppercase tracking-wider">
+                                New Opponent
+                            </button>
+                            <button className="py-4 text-sm font-medium text-slate-300 hover:bg-white/5 hover:text-white transition uppercase tracking-wider">
+                                Analysis Board
+                            </button>
+                        </div>
+                    )}
 
                     {/* User Clock Area */}
                     <div className={`bg-slate-800/50 p-4 border-t border-white/5 ${game.turn() === 'w' ? 'bg-slate-800' : ''}`}>
                         <div className={`rounded px-4 py-2 text-right mb-2 border-b-4 border-emerald-600 transition-colors ${game.turn() === 'w' ? 'bg-white text-slate-900' : 'bg-slate-900 text-white'}`}>
                             <span className="text-4xl font-mono font-bold">
-                                {isAbortPhase && game.turn() === 'w' ? formatTime(abortTime) : formatTime(whiteTime)}
+                                {whiteShowingAbortTimer ? formatTime(whiteAbortTimeLeft) : formatTime(whiteTime)}
                             </span>
                         </div>
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
                                 <span className="h-2 w-2 rounded-full bg-emerald-500"></span>
-                                <span className="font-bold text-slate-200">{currentUser.username}</span>
+                                <span className="font-bold text-slate-200">{currentUser.displayName}</span>
                             </div>
-                            <span className="text-slate-400 text-sm">{currentUser.rating} <span className="text-emerald-400 text-xs">+{currentUser.ratingDiff}</span></span>
+                            <span className="text-slate-400 text-sm">{currentUser.rating}</span>
                         </div>
                     </div>
                 </div>

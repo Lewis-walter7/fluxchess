@@ -158,6 +158,7 @@ exports.Prisma.GameScalarFieldEnum = {
   id: 'id',
   createdAt: 'createdAt',
   timeControl: 'timeControl',
+  status: 'status',
   whiteUserId: 'whiteUserId',
   blackUserId: 'blackUserId',
   whiteRating: 'whiteRating',
@@ -166,7 +167,9 @@ exports.Prisma.GameScalarFieldEnum = {
   blackDeviation: 'blackDeviation',
   whiteVolatility: 'whiteVolatility',
   blackVolatility: 'blackVolatility',
-  initialFen: 'initialFen'
+  initialFen: 'initialFen',
+  startedAt: 'startedAt',
+  abortedAt: 'abortedAt'
 };
 
 exports.Prisma.SortOrder = {
@@ -188,6 +191,13 @@ exports.TimeControl = exports.$Enums.TimeControl = {
   BLITZ: 'BLITZ',
   RAPID: 'RAPID',
   CLASSICAL: 'CLASSICAL'
+};
+
+exports.GameStatus = exports.$Enums.GameStatus = {
+  WAITING_FOR_START: 'WAITING_FOR_START',
+  IN_PROGRESS: 'IN_PROGRESS',
+  COMPLETED: 'COMPLETED',
+  ABORTED: 'ABORTED'
 };
 
 exports.Prisma.ModelName = {

@@ -56,8 +56,22 @@ let MatchmakingGateway = MatchmakingGateway_1 = class MatchmakingGateway {
         this.server.to(aSocketId).emit('queue.matchFound', payloadForA);
         this.server.to(bSocketId).emit('queue.matchFound', payloadForB);
     }
+    joinGameRoom(socketId1, socketId2, gameId) {
+        this.server.in([socketId1, socketId2]).socketsJoin(gameId);
+    }
     emitQueueUpdate(socketId, payload) {
         this.server.to(socketId).emit('queue.update', payload);
+    }
+    emitGameAborted(gameId, reason) {
+        this.server.to(gameId).emit('game:aborted', { gameId, reason });
+    }
+    async handleMove(client, payload) {
+        await this.matchmakingService.handleMove(payload.gameId);
+        const gameMovePayload = {
+            gameId: payload.gameId,
+            move: payload.san,
+        };
+        client.to(payload.gameId).emit('game:move', gameMovePayload);
     }
 };
 exports.MatchmakingGateway = MatchmakingGateway;
@@ -81,6 +95,14 @@ __decorate([
     __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", Promise)
 ], MatchmakingGateway.prototype, "handleLeave", null);
+__decorate([
+    (0, websockets_1.SubscribeMessage)('game:move'),
+    __param(0, (0, websockets_1.ConnectedSocket)()),
+    __param(1, (0, websockets_1.MessageBody)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], MatchmakingGateway.prototype, "handleMove", null);
 exports.MatchmakingGateway = MatchmakingGateway = MatchmakingGateway_1 = __decorate([
     (0, websockets_1.WebSocketGateway)({
         namespace: '/core',

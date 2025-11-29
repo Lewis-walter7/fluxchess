@@ -20,6 +20,7 @@ export interface AuthenticatedUser {
   id: string;
   email: string;
   username: string;
+  flair?: string;
   isEmailVerified: boolean;
 }
 
@@ -67,8 +68,11 @@ export type MatchmakingUpdatePayload = MatchmakingProgressPayload;
 export interface MatchFoundPayload {
   queueId: string;
   gameId: string;
+  timeControl: TimeControl;
   opponent: {
     userId: string;
+    username: string;
+    flair?: string;
     rating: RatingSnapshot;
     latencyMs: number;
   };
@@ -80,6 +84,11 @@ export interface MoveSubmittedPayload {
   san: string;
   moveTimeMs: number;
   clientMoveId: string;
+}
+
+export interface GameMovePayload {
+  gameId: string;
+  move: string;
 }
 
 export interface GameStateDiff {
@@ -103,6 +112,11 @@ export interface GameErrorPayload {
   code: string;
 }
 
+export interface GameAbortedPayload {
+  gameId: string;
+  reason: string;
+}
+
 export interface ClientToServerEvents {
   "queue.join": (payload: MatchmakingJoinPayload) => MatchmakingQueuedAck;
   "queue.leave": (payload: { queueId: string }) => void;
@@ -115,5 +129,7 @@ export interface ServerToClientEvents {
   "queue.matchFound": (payload: MatchFoundPayload) => void;
   "game:diff": (payload: { gameId: string; diff: GameStateDiff }) => void;
   "game:error": (payload: GameErrorPayload) => void;
+  "game:aborted": (payload: GameAbortedPayload) => void;
+  "game:move": (payload: GameMovePayload) => void;
 }
 

@@ -39,6 +39,7 @@ let MatchmakingService = MatchmakingService_1 = class MatchmakingService {
         this.gateway = gateway;
     }
     async joinQueue(socket, payload) {
+        await this.removeByUser(payload.userId);
         const queueId = (0, node_crypto_1.randomUUID)();
         const now = Date.now();
         const entry = {
@@ -65,6 +66,10 @@ let MatchmakingService = MatchmakingService_1 = class MatchmakingService {
             ratingRange: this.computeWindow(entry),
             nextExpansionInMs: EXPANSION_INTERVAL_MS,
         };
+    }
+    async removeByUser(userId) {
+        const all = [...this.queues.values()].flatMap((map) => [...map.values()].filter((entry) => entry.userId === userId));
+        await Promise.all(all.map((entry) => this.leaveQueue(entry.socketId, entry.queueId)));
     }
     async leaveQueue(socketId, queueId) {
         const entry = this.removeFromMemoryQueue(queueId);
@@ -183,6 +188,8 @@ let MatchmakingService = MatchmakingService_1 = class MatchmakingService {
                 const b = entries[j];
                 if (a.antiCheatOnCooldown || b.antiCheatOnCooldown)
                     continue;
+                if (a.userId === b.userId)
+                    continue;
                 const aWindow = this.computeWindow(a);
                 const bWindow = this.computeWindow(b);
                 const overlap = aWindow.min <= bWindow.max && bWindow.min <= aWindow.max;
@@ -249,15 +256,28 @@ let MatchmakingService = MatchmakingService_1 = class MatchmakingService {
                 initialFen,
             },
         });
+        const [userA, userB] = await Promise.all([
+            this.prisma.user.findUnique({
+                where: { id: a.userId },
+                select: { username: true, flair: true },
+            }),
+            this.prisma.user.findUnique({
+                where: { id: b.userId },
+                select: { username: true, flair: true },
+            }),
+        ]);
         const basePayload = {
             queueId: a.queueId,
             gameId,
+            timeControl: a.timeControl,
             initialFen,
         };
         const payloadForA = {
             ...basePayload,
             opponent: {
                 userId: b.userId,
+                username: userB?.username || b.userId,
+                flair: userB?.flair || undefined,
                 rating: this.toRatingSnapshot(b),
                 latencyMs: b.latencyMs,
             },
@@ -267,11 +287,58 @@ let MatchmakingService = MatchmakingService_1 = class MatchmakingService {
             queueId: b.queueId,
             opponent: {
                 userId: a.userId,
+                username: userA?.username || a.userId,
+                flair: userA?.flair || undefined,
                 rating: this.toRatingSnapshot(a),
                 latencyMs: a.latencyMs,
             },
         };
+        this.gateway.joinGameRoom(a.socketId, b.socketId, gameId);
         this.gateway.emitMatchFound(a.socketId, b.socketId, payloadForA, payloadForB);
+        this.scheduleAbortCheck(gameId, 30_000);
+    }
+    abortTimers = new Map();
+    scheduleAbortCheck(gameId, delayMs) {
+        const timer = setTimeout(() => {
+            void this.checkAndAbortGame(gameId);
+        }, delayMs);
+        this.abortTimers.set(gameId, timer);
+    }
+    async handleMove(gameId) {
+        const timer = this.abortTimers.get(gameId);
+        if (timer) {
+            clearTimeout(timer);
+            this.abortTimers.delete(gameId);
+            await this.prisma.game.updateMany({
+                where: {
+                    id: gameId,
+                    status: 'WAITING_FOR_START',
+                },
+                data: {
+                    status: 'IN_PROGRESS',
+                    startedAt: new Date(),
+                },
+            });
+        }
+    }
+    async checkAndAbortGame(gameId) {
+        const game = await this.prisma.game.findUnique({
+            where: { id: gameId },
+        });
+        if (!game || game.status !== 'WAITING_FOR_START') {
+            return;
+        }
+        await this.prisma.game.update({
+            where: { id: gameId },
+            data: {
+                status: 'ABORTED',
+                abortedAt: new Date(),
+            },
+        });
+        this.gateway.emitGameAborted(gameId, 'Players did not start the game within 30 seconds');
+        this.abortTimers.delete(gameId);
+        const client = await this.redis.getClient();
+        await client.srem(activeGamesKey, gameId);
     }
     toRatingSnapshot(entry) {
         return {
